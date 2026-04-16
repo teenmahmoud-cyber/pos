@@ -153,19 +153,6 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-              {lang === 'ar' ? 'بيانات الدخول التجريبية:' : 'Demo Credentials:'}
-            </p>
-            <div className="text-sm space-y-1">
-              <p className="font-mono">
-                <span className="text-gray-500">Admin:</span> admin / admin123
-              </p>
-              <p className="font-mono">
-                <span className="text-gray-500">Cashier:</span> cashier / 1234
-              </p>
-            </div>
-          </div>
         </div>
 
         <p className="text-center mt-6 text-sm text-gray-500">

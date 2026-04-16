@@ -47,7 +47,7 @@ export const useStore = create<AppState>()(
       cart: [],
       selectedCustomer: null,
       isLoading: false,
-      isAuthenticated: false,
+      isAuthenticated: false, // Changed: require login by default
       userRole: null,
 
       setSettings: (newSettings) =>
