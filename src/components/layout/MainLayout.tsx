@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -15,6 +15,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const { settings, isAuthenticated } = useStore();
   const router = useRouter();
   const isRTL = settings.language === 'ar';
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -40,9 +41,12 @@ export function MainLayout({ children }: MainLayoutProps) {
         <button onClick={() => (window as any).installApp?.()} className="bg-white text-blue-600 px-3 py-1 rounded text-sm font-medium">تثبيت</button>
         <button onClick={() => (window as any).dismissInstall?.()} className="text-white/80 hover:text-white">✕</button>
       </div>
-      <Sidebar />
+      <Sidebar 
+        mobileOpen={mobileMenuOpen} 
+        onMobileClose={() => setMobileMenuOpen(false)} 
+      />
       <div className={`${isRTL ? 'lg:mr-64' : 'lg:ml-64'}`}>
-        <Header />
+        <Header onMenuClick={() => setMobileMenuOpen(true)} />
         <main className="p-4 lg:p-6">
           {children}
         </main>

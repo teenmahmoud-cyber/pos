@@ -138,16 +138,24 @@ export async function initializeDatabase() {
     const defaultAdminPermissions: UserPermissions = {
       canManageProducts: true,
       canManageCustomers: true,
-      canViewReports: true,
-      canManageSettings: true,
+      canManageSuppliers: true,
+      canManageUsers: true,
       canProcessReturns: true,
+      canManageSettings: true,
+      canViewReports: true,
+      canCreditSales: true,
+      canDiscount: true,
     };
     const defaultCashierPermissions: UserPermissions = {
       canManageProducts: false,
       canManageCustomers: true,
-      canViewReports: false,
-      canManageSettings: false,
+      canManageSuppliers: false,
+      canManageUsers: false,
       canProcessReturns: false,
+      canManageSettings: false,
+      canViewReports: false,
+      canCreditSales: false,
+      canDiscount: false,
     };
     const users = [
       { username: 'admin', password: 'admin123', name: 'مدير النظام', role: 'admin' as const, permissions: defaultAdminPermissions, createdAt: new Date() },

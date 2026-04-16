@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Truck, Phone, DollarSign, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Truck, Phone, DollarSign, ArrowUpDown, ArrowDown, ArrowUp, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -15,6 +15,7 @@ import { Supplier } from '@/lib/types';
 import { useSuppliers } from '@/lib/supabase/hooks';
 import { supabase } from '@/lib/supabase/client';
 
+type BalanceFilter = 'all' | 'withBalance' | 'owed' | 'credit';
 type BalanceType = 'owes' | 'credit';
 
 export default function SuppliersPage() {
@@ -33,6 +34,7 @@ export default function SuppliersPage() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentType, setPaymentType] = useState<'payment' | 'charge'>('payment');
   const [ledgerTransactions, setLedgerTransactions] = useState<any[]>([]);
+  const [filter, setFilter] = useState<BalanceFilter>('all');
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -44,11 +46,16 @@ export default function SuppliersPage() {
 
   const { suppliers, addSupplier, updateSupplier, deleteSupplier, refetch } = useSuppliers();
 
-  const filteredSuppliers = searchQuery
-    ? suppliers.filter(s => s.name.includes(searchQuery) || s.phone.includes(searchQuery))
-    : suppliers;
+  const filteredSuppliers = suppliers.filter(s => {
+    if (searchQuery && !s.name.includes(searchQuery) && !s.phone.includes(searchQuery)) return false;
+    if (filter === 'withBalance') return s.balance !== 0;
+    if (filter === 'owed') return s.balance > 0;
+    if (filter === 'credit') return s.balance < 0;
+    return true;
+  });
 
-  const totalBalance = filteredSuppliers.reduce((sum, s) => sum + s.balance, 0);
+  const totalOwed = suppliers.filter(s => s.balance > 0).reduce((sum, s) => sum + s.balance, 0);
+  const totalCredit = suppliers.filter(s => s.balance < 0).reduce((sum, s) => sum + s.balance, 0);
 
   const handleOpenModal = (supplier?: Supplier) => {
     if (supplier) {
@@ -199,12 +206,25 @@ export default function SuppliersPage() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-orange-600" />
+                <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-red-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{totalBalance.toFixed(3)} {currency}</p>
-                  <p className="text-sm text-gray-500">{lang === 'ar' ? 'إجمالي المستحقات' : 'Total Payables'}</p>
+                  <p className="text-2xl font-bold text-red-600">{totalOwed.toFixed(3)} {currency}</p>
+                  <p className="text-sm text-gray-500">{lang === 'ar' ? 'مستحقاتنا للموردين' : 'We Owe Suppliers'}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                  <Wallet className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-green-600">{Math.abs(totalCredit).toFixed(3)} {currency}</p>
+                  <p className="text-sm text-gray-500">{lang === 'ar' ? 'لنا عند الموردين' : 'Suppliers Owe Us'}</p>
                 </div>
               </div>
             </CardContent>
@@ -213,15 +233,29 @@ export default function SuppliersPage() {
 
         <Card>
           <CardContent className="p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder={t('search', lang)}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full ps-10 pe-4 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder={t('search', lang)}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full ps-10 pe-4 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant={filter === 'all' ? 'primary' : 'secondary'} size="sm" onClick={() => setFilter('all')}>
+                  {t('all', lang)}
+                </Button>
+                <Button variant={filter === 'withBalance' ? 'primary' : 'secondary'} size="sm" onClick={() => setFilter('withBalance')}>
+                  <DollarSign className="w-4 h-4 me-1" />
+                  {lang === 'ar' ? 'له رصيد' : 'Has Balance'}
+                </Button>
+                <Button variant={filter === 'owed' ? 'primary' : 'secondary'} size="sm" onClick={() => setFilter('owed')}>
+                  {lang === 'ar' ? 'مستحقات' : 'Payable'}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -258,8 +292,10 @@ export default function SuppliersPage() {
                   </TableCell>
                   <TableCell className="text-gray-500">{supplier.address || '-'}</TableCell>
                   <TableCell className="text-end">
-                    <Badge variant={supplier.balance > 0 ? 'warning' : 'success'}>
-                      {supplier.balance.toFixed(3)} {currency}
+                    <Badge variant={supplier.balance > 0 ? 'danger' : supplier.balance < 0 ? 'success' : 'default'}>
+                      {supplier.balance > 0 && <span className="me-1">↓</span>}
+                      {supplier.balance < 0 && <span className="me-1">↑</span>}
+                      {Math.abs(supplier.balance).toFixed(3)} {currency}
                     </Badge>
                   </TableCell>
                   <TableCell>

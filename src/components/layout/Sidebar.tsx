@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { t, TranslationKey } from '@/lib/i18n';
-import { useState } from 'react';
+import { useState, forwardRef } from 'react';
 
 const navItems: Array<{
   href: string;
@@ -29,6 +29,7 @@ const navItems: Array<{
 }> = [
   { href: '/', icon: LayoutDashboard, labelKey: 'dashboard' },
   { href: '/pos', icon: ShoppingCart, labelKey: 'pos' },
+  { href: '/purchases', icon: Truck, labelKey: 'purchases' },
   { href: '/inventory', icon: Package, labelKey: 'inventory' },
   { href: '/categories', icon: FolderOpen, labelKey: 'categories' },
   { href: '/invoices', icon: FileText, labelKey: 'invoices' },
@@ -39,23 +40,28 @@ const navItems: Array<{
   { href: '/settings', icon: Settings, labelKey: 'settings' },
 ];
 
-export function Sidebar() {
+export function Sidebar({ mobileOpen, onMobileClose }: { mobileOpen?: boolean; onMobileClose?: () => void }) {
   const pathname = usePathname();
   const { settings, userRole } = useStore();
   const lang = settings.language;
   const isRTL = lang === 'ar';
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(mobileOpen || false);
   const isAdmin = userRole === 'admin';
+
+  const handleMobileClose = () => {
+    setIsMobileOpen(false);
+    onMobileClose?.();
+  };
 
   return (
     <>
-      <button
-        onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed top-4 z-50 p-2 bg-white dark:bg-slate-800 rounded-lg shadow-md"
-      >
-        <Menu className="w-6 h-6" />
-      </button>
+      {isMobileOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={handleMobileClose}
+        />
+      )}
 
       {isMobileOpen && (
         <div 

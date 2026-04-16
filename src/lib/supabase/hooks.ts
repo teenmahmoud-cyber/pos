@@ -434,7 +434,7 @@ export function useInvoices() {
     try {
       const { data, error } = await supabase
         .from('invoices')
-        .select('*, customer:customers(*)')
+        .select('*, customer:customers(*), supplier:suppliers(*)')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -445,7 +445,9 @@ export function useInvoices() {
         type: inv.type,
         status: inv.status,
         customerId: inv.customer_id,
+        supplierId: inv.supplier_id,
         customer: inv.customer,
+        supplier: inv.supplier,
         subtotal: inv.subtotal,
         vatRate: inv.vat_rate,
         vatAmount: inv.vat_amount,
@@ -490,6 +492,7 @@ export function useInvoices() {
         type: invoice.type,
         status: invoice.status,
         customer_id: invoice.customerId,
+        supplier_id: invoice.supplierId,
         subtotal: invoice.subtotal,
         vat_rate: invoice.vatRate,
         vat_amount: invoice.vatAmount,
@@ -593,7 +596,7 @@ export function useUsers() {
     return data;
   };
 
-  const addUser = async (user: { username: string; password: string; name: string; role: 'admin' | 'cashier' }) => {
+  const addUser = async (user: { username: string; password: string; name: string; role: 'admin' | 'cashier'; permissions?: UserPermissions }) => {
     const { data, error } = await supabase
       .from('users')
       .insert([{
@@ -601,6 +604,7 @@ export function useUsers() {
         password: user.password,
         name: user.name,
         role: user.role,
+        permissions: user.permissions || {},
       }])
       .select()
       .single();
@@ -610,12 +614,13 @@ export function useUsers() {
     return data;
   };
 
-  const updateUser = async (id: number, user: { username?: string; password?: string; name?: string; role?: string }) => {
+  const updateUser = async (id: number, user: { username?: string; password?: string; name?: string; role?: string; permissions?: UserPermissions }) => {
     const updateData: any = {};
     if (user.username) updateData.username = user.username;
     if (user.password) updateData.password = user.password;
     if (user.name) updateData.name = user.name;
     if (user.role) updateData.role = user.role;
+    if (user.permissions) updateData.permissions = user.permissions;
 
     const { error } = await supabase.from('users').update(updateData).eq('id', id);
     if (error) throw error;

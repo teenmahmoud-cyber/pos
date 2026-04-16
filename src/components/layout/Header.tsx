@@ -2,10 +2,14 @@
 
 import { useStore } from '@/lib/store';
 import { t } from '@/lib/i18n';
-import { Sun, Moon, Globe, Bell, User } from 'lucide-react';
+import { Sun, Moon, Globe, Bell, User, Menu } from 'lucide-react';
 import { Button } from '../ui/Button';
 
-export function Header() {
+interface HeaderProps {
+  onMenuClick?: () => void;
+}
+
+export function Header({ onMenuClick }: HeaderProps) {
   const { settings, toggleTheme, toggleLanguage } = useStore();
   const lang = settings.language;
   const isRTL = lang === 'ar';
@@ -18,7 +22,13 @@ export function Header() {
       ${isRTL ? 'lg:mr-64' : 'lg:ml-64'}
     `}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 lg:gap-6">
+        <div className="flex items-center gap-3 lg:gap-6">
+          <button
+            onClick={onMenuClick}
+            className="lg:hidden p-2 -ms-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white lg:hidden">
             {t('dashboard', lang)}
           </h2>

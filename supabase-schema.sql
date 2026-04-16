@@ -62,6 +62,7 @@ CREATE TABLE invoices (
   type VARCHAR(50) DEFAULT 'sale',
   status VARCHAR(50) DEFAULT 'completed',
   customer_id INTEGER REFERENCES customers(id),
+  supplier_id INTEGER REFERENCES suppliers(id),
   subtotal DECIMAL(10, 3) NOT NULL,
   vat_rate DECIMAL(5, 2) DEFAULT 5,
   vat_amount DECIMAL(10, 3) NOT NULL,
@@ -106,13 +107,14 @@ CREATE TABLE settings (
   value TEXT NOT NULL
 );
 
--- Users Table
+-- Users Table (Updated with Permissions)
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(100) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
   role VARCHAR(50) DEFAULT 'cashier',
   name VARCHAR(255),
+  permissions JSONB DEFAULT '{"canManageProducts": true, "canManageCustomers": true, "canViewReports": true, "canManageSettings": true, "canProcessReturns": true}'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -140,5 +142,15 @@ INSERT INTO users (username, password, role, name) VALUES
 CREATE INDEX idx_products_barcode ON products(barcode);
 CREATE INDEX idx_products_category ON products(category_id);
 CREATE INDEX idx_invoices_customer ON invoices(customer_id);
+CREATE INDEX idx_invoices_supplier ON invoices(supplier_id);
 CREATE INDEX idx_invoices_created ON invoices(created_at);
 CREATE INDEX idx_transactions_customer ON transactions(customer_id);
+CREATE INDEX idx_transactions_supplier ON transactions(supplier_id);
+
+-- =============================================
+-- MIGRATION: Add missing columns if they don't exist
+-- Run these separately if you already have the database
+-- =============================================
+
+-- ALTER TABLE invoices ADD COLUMN IF NOT EXISTS supplier_id INTEGER REFERENCES suppliers(id);
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '{"canManageProducts": true, "canManageCustomers": true, "canViewReports": true, "canManageSettings": true, "canProcessReturns": true}'::jsonb;

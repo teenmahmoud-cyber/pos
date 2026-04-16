@@ -104,9 +104,13 @@ export interface User {
 export interface UserPermissions {
   canManageProducts: boolean;
   canManageCustomers: boolean;
-  canViewReports: boolean;
-  canManageSettings: boolean;
+  canManageSuppliers: boolean;
+  canManageUsers: boolean;
   canProcessReturns: boolean;
+  canManageSettings: boolean;
+  canViewReports: boolean;
+  canCreditSales: boolean;
+  canDiscount: boolean;
 }
 
 export interface CartItem {

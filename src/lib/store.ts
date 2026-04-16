@@ -9,10 +9,11 @@ interface AppState {
   isLoading: boolean;
   isAuthenticated: boolean;
   userRole: 'admin' | 'cashier' | null;
+  cartType: 'sale' | 'purchase';
   setSettings: (settings: Partial<AppSettings>) => void;
   toggleTheme: () => void;
   toggleLanguage: () => void;
-  addToCart: (product: Product) => void;
+  addToCart: (product: Product, cartType?: 'sale' | 'purchase') => void;
   removeFromCart: (productId: number) => void;
   updateCartQuantity: (productId: number, quantity: number) => void;
   updateCartDiscount: (productId: number, discount: number) => void;
@@ -49,6 +50,7 @@ export const useStore = create<AppState>()(
       isLoading: false,
       isAuthenticated: false, // Changed: require login by default
       userRole: null,
+      cartType: 'sale',
 
       setSettings: (newSettings) =>
         set((state) => ({
@@ -71,8 +73,11 @@ export const useStore = create<AppState>()(
           },
         })),
 
-      addToCart: (product) =>
+      addToCart: (product, cartType = 'sale') =>
         set((state) => {
+          if (state.cartType !== cartType) {
+            return { cart: [{ product, quantity: 1, discount: 0 }], cartType };
+          }
           const existingItem = state.cart.find((item) => item.product.id === product.id);
           if (existingItem) {
             return {
@@ -109,7 +114,7 @@ export const useStore = create<AppState>()(
           ),
         })),
 
-      clearCart: () => set({ cart: [], selectedCustomer: null }),
+      clearCart: () => set({ cart: [], selectedCustomer: null, cartType: 'sale' }),
 
       setSelectedCustomer: (customer) => set({ selectedCustomer: customer }),
 
@@ -128,9 +133,12 @@ export const useStore = create<AppState>()(
         set({ isAuthenticated: false, userRole: null, cart: [], selectedCustomer: null }),
 
       getCartSubtotal: () => {
-        const { cart } = get();
+        const { cart, cartType } = get();
         return cart.reduce(
-          (sum, item) => sum + item.product.price * item.quantity - item.discount,
+          (sum, item) => {
+            const price = cartType === 'purchase' ? (item.product.cost || 0) : item.product.price;
+            return sum + price * item.quantity - item.discount;
+          },
           0
         );
       },
