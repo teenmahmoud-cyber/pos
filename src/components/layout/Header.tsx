@@ -1,73 +1,215 @@
 'use client';
 
-import { useStore } from '@/lib/store';
+import { useState } from 'react';
+import { useStore, useToastStore } from '@/lib/store';
 import { t } from '@/lib/i18n';
-import { Sun, Moon, Globe, Bell, User, Menu } from 'lucide-react';
+import { Sun, Moon, Globe, Bell, User, Menu, LogOut, Lock } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { Modal } from '../ui/Modal';
+import { Input } from '../ui/Input';
+import { db } from '@/lib/db';
+import { loginUser, isSupabaseConfigured } from '@/lib/supabase/index';
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
   onMenuClick?: () => void;
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
-  const { settings, toggleTheme, toggleLanguage } = useStore();
+  const router = useRouter();
+  const { settings, toggleTheme, toggleLanguage, logout, login, isAuthenticated, userRole } = useStore();
+  const { showToast } = useToastStore();
   const lang = settings.language;
   const isRTL = lang === 'ar';
 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showSwitchUserModal, setShowSwitchUserModal] = useState(false);
+  const [switchPassword, setSwitchPassword] = useState('');
+  const [switchError, setSwitchError] = useState('');
+
+  const handleLogout = () => {
+    logout();
+    setShowLogoutModal(false);
+    router.push('/login');
+  };
+
+  const handleSwitchUser = async () => {
+    if (!switchPassword) {
+      setSwitchError(lang === 'ar' ? 'أدخل كلمة المرور' : 'Enter password');
+      return;
+    }
+    
+    try {
+      const currentUsername = localStorage.getItem('oman-pos-username') || '';
+      let user = null;
+
+      if (isSupabaseConfigured()) {
+        const supabaseUser = await loginUser(currentUsername, switchPassword);
+        if (supabaseUser) {
+          user = supabaseUser;
+        }
+      }
+
+      if (!user) {
+        const dbUsers = await db.users.toArray();
+        const localUser = dbUsers.find(u => u.username === currentUsername && u.password === switchPassword);
+        if (localUser) {
+          user = localUser;
+        }
+      }
+
+      if (user) {
+        logout();
+        login(user.username, user.password);
+        setShowSwitchUserModal(false);
+        setSwitchPassword('');
+        setSwitchError('');
+        showToast(lang === 'ar' ? 'تم التحقق' : 'Verified', 'success');
+      } else {
+        setSwitchError(lang === 'ar' ? 'كلمة المرور غير صحيحة' : 'Invalid password');
+      }
+    } catch (err) {
+      setSwitchError(lang === 'ar' ? 'حدث خطأ' : 'Error');
+    }
+  };
+
   return (
-    <header className={`
-      sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 
-      backdrop-blur-md border-b border-gray-200 dark:border-slate-700
-      px-4 py-3
-      ${isRTL ? 'lg:mr-64' : 'lg:ml-64'}
-    `}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 lg:gap-6">
-          <button
-            onClick={onMenuClick}
-            className="lg:hidden p-2 -ms-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white lg:hidden">
-            {t('dashboard', lang)}
-          </h2>
+    <>
+      <header className={`
+        sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 
+        backdrop-blur-md border-b border-gray-200 dark:border-slate-700
+        px-4 py-3
+        ${isRTL ? 'lg:mr-64' : 'lg:ml-64'}
+      `}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 lg:gap-6">
+            <button
+              onClick={onMenuClick}
+              className="lg:hidden p-2 -ms-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white lg:hidden">
+              {t('dashboard', lang)}
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleLanguage}
+              className="gap-2"
+            >
+              <Globe className="w-4 h-4" />
+              <span className="hidden sm:inline">{lang === 'ar' ? 'English' : 'العربية'}</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleTheme}
+              className="p-2"
+            >
+              {settings.theme === 'light' ? (
+                <Moon className="w-4 h-4" />
+              ) : (
+                <Sun className="w-4 h-4" />
+              )}
+            </Button>
+
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-2"
+              onClick={() => setShowSwitchUserModal(true)}
+              title={lang === 'ar' ? 'تبديل المستخدم' : 'Switch User'}
+            >
+              <Lock className="w-4 h-4" />
+            </Button>
+
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-2 text-red-500 hover:text-red-600"
+              onClick={() => setShowLogoutModal(true)}
+              title={lang === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
+      </header>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleLanguage}
-            className="gap-2"
-          >
-            <Globe className="w-4 h-4" />
-            <span className="hidden sm:inline">{lang === 'ar' ? 'English' : 'العربية'}</span>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleTheme}
-            className="p-2"
-          >
-            {settings.theme === 'light' ? (
-              <Moon className="w-4 h-4" />
-            ) : (
-              <Sun className="w-4 h-4" />
-            )}
-          </Button>
-
-          <Button variant="ghost" size="sm" className="p-2 relative">
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-          </Button>
-
-          <Button variant="ghost" size="sm" className="p-2">
-            <User className="w-4 h-4" />
-          </Button>
+      {/* Logout Confirmation Modal */}
+      <Modal 
+        isOpen={showLogoutModal} 
+        onClose={() => setShowLogoutModal(false)}
+        title={lang === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-center">
+            {lang === 'ar' ? 'هل تريد تسجيل الخروج؟' : 'Do you want to logout?'}
+          </p>
+          <div className="flex gap-3">
+            <Button 
+              variant="secondary" 
+              className="flex-1"
+              onClick={() => setShowLogoutModal(false)}
+            >
+              {t('cancel', lang)}
+            </Button>
+            <Button 
+              variant="primary" 
+              className="flex-1 bg-red-500 hover:bg-red-600"
+              onClick={handleLogout}
+            >
+              {lang === 'ar' ? 'خروج' : 'Logout'}
+            </Button>
+          </div>
         </div>
-      </div>
-    </header>
+      </Modal>
+
+      {/* Switch User Verification Modal */}
+      <Modal 
+        isOpen={showSwitchUserModal} 
+        onClose={() => { setShowSwitchUserModal(false); setSwitchPassword(''); setSwitchError(''); }}
+        title={lang === 'ar' ? 'تأكيد الهوية' : 'Verify Identity'}
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500 text-center">
+            {lang === 'ar' ? 'أدخل كلمة المرور للتأكيد' : 'Enter password to confirm'}
+          </p>
+          <Input
+            type="password"
+            value={switchPassword}
+            onChange={(e) => { setSwitchPassword(e.target.value); setSwitchError(''); }}
+            placeholder={lang === 'ar' ? 'كلمة المرور' : 'Password'}
+            dir="ltr"
+          />
+          {switchError && (
+            <p className="text-red-500 text-sm text-center">{switchError}</p>
+          )}
+          <div className="flex gap-3">
+            <Button 
+              variant="secondary" 
+              className="flex-1"
+              onClick={() => { setShowSwitchUserModal(false); setSwitchPassword(''); }}
+            >
+              {t('cancel', lang)}
+            </Button>
+            <Button 
+              variant="primary" 
+              className="flex-1"
+              onClick={handleSwitchUser}
+            >
+              {lang === 'ar' ? 'تأكيد' : 'Confirm'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 }

@@ -181,10 +181,12 @@ export default function POSPage() {
       }));
 
       const { supabase } = await import('@/lib/supabase/client');
+      const createdBy = localStorage.getItem('oman-pos-username') || '';
       
       await addInvoice({
         number: invoiceNumber, type: invoiceType, status: remaining > 0 ? 'pending' : 'completed',
         customerId: selectedCustomer?.id, items: invoiceItems,
+        createdBy,
         subtotal, vatRate: settings.vatRate, vatAmount: (subtotal - discountAmount) * (settings.vatRate / 100),
         discount: discountAmount, total: finalTotal, paid: paid, remaining: remaining,
         paymentMethod, createdAt: new Date(), updatedAt: new Date()

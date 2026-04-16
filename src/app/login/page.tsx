@@ -52,6 +52,7 @@ export default function LoginPage() {
       }
       
       if (user) {
+        localStorage.setItem('oman-pos-username', username);
         storeLogin(user.username, user.password);
         showToast(lang === 'ar' ? 'مرحباً بك!' : 'Welcome!', 'success');
         router.push(userRole === 'admin' ? '/' : '/pos');

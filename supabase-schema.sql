@@ -63,6 +63,7 @@ CREATE TABLE invoices (
   status VARCHAR(50) DEFAULT 'completed',
   customer_id INTEGER REFERENCES customers(id),
   supplier_id INTEGER REFERENCES suppliers(id),
+  created_by VARCHAR(100),
   subtotal DECIMAL(10, 3) NOT NULL,
   vat_rate DECIMAL(5, 2) DEFAULT 5,
   vat_amount DECIMAL(10, 3) NOT NULL,

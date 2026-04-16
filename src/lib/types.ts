@@ -49,6 +49,7 @@ export interface Invoice {
   status: 'pending' | 'completed' | 'cancelled';
   customerId?: number;
   supplierId?: number;
+  createdBy?: string;
   items: InvoiceItem[];
   subtotal: number;
   vatRate: number;

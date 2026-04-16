@@ -214,7 +214,7 @@ export default function InvoicesPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -224,6 +224,7 @@ export default function InvoicesPage() {
                 <TableHead>{t('customer', lang)}</TableHead>
                 <TableHead className="text-end">{t('total', lang)}</TableHead>
                 <TableHead>{t('status', lang)}</TableHead>
+                <TableHead className="hidden md:table-cell">{lang === 'ar' ? 'بواسطة' : 'By'}</TableHead>
                 <TableHead>{t('actions', lang)}</TableHead>
               </TableRow>
             </TableHeader>
@@ -242,6 +243,9 @@ export default function InvoicesPage() {
                     {invoice.total.toFixed(3)} {currency}
                   </TableCell>
                   <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                  <TableCell className="hidden md:table-cell text-sm text-gray-500">
+                    {invoice.createdBy || '-'}
+                  </TableCell>
                   <TableCell>
                     <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
