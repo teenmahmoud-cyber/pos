@@ -37,7 +37,7 @@ export function useSupabaseConnection() {
 // ============ CATEGORIES HOOKS ============
 
 export function useCategories() {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +55,13 @@ export function useCategories() {
         .order('id');
       
       if (error) throw error;
-      setCategories(data || []);
+      const mapped = (data || []).map((c: any) => ({
+        id: c.id,
+        nameAr: c.name_ar,
+        nameEn: c.name_en,
+        createdAt: c.created_at,
+      }));
+      setCategories(mapped);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -240,7 +246,16 @@ export function useCustomers() {
         .order('id');
       
       if (error) throw error;
-      setCustomers(data || []);
+      const mapped = (data || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        email: c.email,
+        address: c.address,
+        balance: c.balance,
+        createdAt: c.created_at,
+      }));
+      setCustomers(mapped);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -327,7 +342,16 @@ export function useSuppliers() {
         .order('id');
       
       if (error) throw error;
-      setSuppliers(data || []);
+      const mapped = (data || []).map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        phone: s.phone,
+        email: s.email,
+        address: s.address,
+        balance: s.balance,
+        createdAt: s.created_at,
+      }));
+      setSuppliers(mapped);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -518,7 +542,7 @@ export function useInvoices() {
 // ============ USERS HOOKS ============
 
 export function useUsers() {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -536,7 +560,15 @@ export function useUsers() {
         .order('id');
       
       if (error) throw error;
-      setUsers(data || []);
+      const mapped = (data || []).map((u: any) => ({
+        id: u.id,
+        username: u.username,
+        password: u.password,
+        name: u.name,
+        role: u.role,
+        createdAt: u.created_at,
+      }));
+      setUsers(mapped);
     } catch (e: any) {
       setError(e.message);
     } finally {
