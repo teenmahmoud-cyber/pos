@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Truck, Phone, DollarSign, ArrowUpDown } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Truck, Phone, DollarSign, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -14,6 +14,8 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Supplier } from '@/lib/types';
 import { useSuppliers } from '@/lib/supabase/hooks';
 import { supabase } from '@/lib/supabase/client';
+
+type BalanceType = 'owes' | 'credit';
 
 export default function SuppliersPage() {
   const { settings } = useStore();
@@ -37,6 +39,7 @@ export default function SuppliersPage() {
     email: '',
     address: '',
     initialBalance: '0',
+    balanceType: 'owes' as BalanceType,
   });
 
   const { suppliers, addSupplier, updateSupplier, deleteSupplier, refetch } = useSuppliers();
@@ -55,7 +58,8 @@ export default function SuppliersPage() {
         phone: supplier.phone,
         email: supplier.email || '',
         address: supplier.address,
-        initialBalance: supplier.balance.toString(),
+        initialBalance: Math.abs(supplier.balance).toString(),
+        balanceType: supplier.balance > 0 ? 'owes' : 'credit',
       });
     } else {
       setEditingSupplier(null);
@@ -65,6 +69,7 @@ export default function SuppliersPage() {
         email: '',
         address: '',
         initialBalance: '0',
+        balanceType: 'owes',
       });
     }
     setShowSupplierModal(true);
@@ -88,13 +93,15 @@ export default function SuppliersPage() {
     }
 
     try {
+      const balance = (parseFloat(formData.initialBalance) || 0) * (formData.balanceType === 'owes' ? 1 : -1);
+      
       if (editingSupplier && editingSupplier.id) {
         await updateSupplier(editingSupplier.id, {
           name: formData.name,
           phone: formData.phone,
           email: formData.email || undefined,
           address: formData.address,
-          balance: parseFloat(formData.initialBalance) || 0,
+          balance: balance,
         });
         showToast(lang === 'ar' ? 'تم تحديث المورد' : 'Supplier updated', 'success');
       } else {
@@ -103,7 +110,7 @@ export default function SuppliersPage() {
           phone: formData.phone,
           email: formData.email || undefined,
           address: formData.address,
-          balance: parseFloat(formData.initialBalance) || 0,
+          balance: balance,
         });
         showToast(lang === 'ar' ? 'تم إضافة المورد' : 'Supplier added', 'success');
       }
@@ -317,8 +324,50 @@ export default function SuppliersPage() {
             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
           />
 
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              {lang === 'ar' ? 'نوع الرصيد' : 'Balance Type'}
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, balanceType: 'owes' })}
+                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 ${
+                  formData.balanceType === 'owes' 
+                    ? 'border-red-500 bg-red-50 dark:bg-red-900/20' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <ArrowDown className={`w-6 h-6 ${formData.balanceType === 'owes' ? 'text-red-600' : 'text-gray-400'}`} />
+                <span className={`font-medium ${formData.balanceType === 'owes' ? 'text-red-600' : 'text-gray-600'}`}>
+                  {lang === 'ar' ? 'عليه (مدين)' : 'Owes'}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {lang === 'ar' ? 'المورد يدين للمتجر' : 'Supplier owes shop'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, balanceType: 'credit' })}
+                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 ${
+                  formData.balanceType === 'credit' 
+                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <ArrowUp className={`w-6 h-6 ${formData.balanceType === 'credit' ? 'text-green-600' : 'text-gray-400'}`} />
+                <span className={`font-medium ${formData.balanceType === 'credit' ? 'text-green-600' : 'text-gray-600'}`}>
+                  {lang === 'ar' ? 'له (دائن)' : 'Credit'}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {lang === 'ar' ? 'المتجر يدين للمورد' : 'Shop owes supplier'}
+                </span>
+              </button>
+            </div>
+          </div>
+
           <Input
-            label={lang === 'ar' ? 'الرصيد الأولي' : 'Initial Balance'}
+            label={lang === 'ar' ? 'قيمة الرصيد' : 'Balance Amount'}
             type="number"
             step="0.001"
             value={formData.initialBalance}

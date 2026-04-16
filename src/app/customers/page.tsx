@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Users, Phone, DollarSign, Wallet, ArrowUpDown } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Users, Phone, DollarSign, Wallet, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -15,6 +15,7 @@ import { useCustomers } from '@/lib/supabase/hooks';
 import { supabase } from '@/lib/supabase/client';
 
 type BalanceFilter = 'all' | 'withBalance' | 'owed' | 'credit';
+type BalanceType = 'owes' | 'credit'; // له = credit (shop owes them), عليه = owes (they owe shop)
 
 export default function CustomersPage() {
   const { settings } = useStore();
@@ -33,6 +34,7 @@ export default function CustomersPage() {
   const [paymentType, setPaymentType] = useState<'payment' | 'charge'>('payment');
   const [filter, setFilter] = useState<BalanceFilter>('all');
   const [ledgerTransactions, setLedgerTransactions] = useState<any[]>([]);
+  const [balanceType, setBalanceType] = useState<BalanceType>('owes');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -40,6 +42,7 @@ export default function CustomersPage() {
     email: '',
     address: '',
     initialBalance: '0',
+    balanceType: 'owes' as BalanceType,
   });
 
   const { customers, addCustomer, updateCustomer, deleteCustomer, refetch } = useCustomers();
@@ -63,8 +66,10 @@ export default function CustomersPage() {
         phone: customer.phone,
         email: customer.email || '',
         address: customer.address,
-        initialBalance: customer.balance.toString(),
+        initialBalance: Math.abs(customer.balance).toString(),
+        balanceType: customer.balance > 0 ? 'owes' : 'credit',
       });
+      setBalanceType(customer.balance > 0 ? 'owes' : 'credit');
     } else {
       setEditingCustomer(null);
       setFormData({
@@ -73,7 +78,9 @@ export default function CustomersPage() {
         email: '',
         address: '',
         initialBalance: '0',
+        balanceType: 'owes',
       });
+      setBalanceType('owes');
     }
     setShowCustomerModal(true);
   };
@@ -85,12 +92,13 @@ export default function CustomersPage() {
     }
 
     try {
+      const balance = (parseFloat(formData.initialBalance) || 0) * (formData.balanceType === 'owes' ? 1 : -1);
       const data = {
         name: formData.name,
         phone: formData.phone,
         email: formData.email || undefined,
         address: formData.address,
-        balance: parseFloat(formData.initialBalance) || 0,
+        balance: balance,
       };
 
       if (editingCustomer) {
@@ -348,8 +356,50 @@ export default function CustomersPage() {
             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
           />
 
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              {lang === 'ar' ? 'نوع الرصيد' : 'Balance Type'}
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, balanceType: 'owes' })}
+                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 ${
+                  formData.balanceType === 'owes' 
+                    ? 'border-red-500 bg-red-50 dark:bg-red-900/20' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <ArrowDown className={`w-6 h-6 ${formData.balanceType === 'owes' ? 'text-red-600' : 'text-gray-400'}`} />
+                <span className={`font-medium ${formData.balanceType === 'owes' ? 'text-red-600' : 'text-gray-600'}`}>
+                  {lang === 'ar' ? 'عليه (مدين)' : 'Owes'}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {lang === 'ar' ? 'العميل يدين للمتجر' : 'Customer owes shop'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, balanceType: 'credit' })}
+                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 ${
+                  formData.balanceType === 'credit' 
+                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <ArrowUp className={`w-6 h-6 ${formData.balanceType === 'credit' ? 'text-green-600' : 'text-gray-400'}`} />
+                <span className={`font-medium ${formData.balanceType === 'credit' ? 'text-green-600' : 'text-gray-600'}`}>
+                  {lang === 'ar' ? 'له (دائن)' : 'Credit'}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {lang === 'ar' ? 'المتجر يدين للعميل' : 'Shop owes customer'}
+                </span>
+              </button>
+            </div>
+          </div>
+
           <Input
-            label={lang === 'ar' ? 'الرصيد الأولي' : 'Initial Balance'}
+            label={lang === 'ar' ? 'قيمة الرصيد' : 'Balance Amount'}
             type="number"
             step="0.001"
             value={formData.initialBalance}

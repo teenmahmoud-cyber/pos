@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { UserPlus, Edit2, Trash2, Shield, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, Edit2, Trash2, Shield, Eye, EyeOff, Package, Users, Settings, RotateCcw, DollarSign, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
@@ -12,6 +12,18 @@ import { useStore, useToastStore } from '@/lib/store';
 import { t } from '@/lib/i18n';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useUsers } from '@/lib/supabase/hooks';
+
+interface UserPermissions {
+  canManageProducts: boolean;
+  canManageCustomers: boolean;
+  canManageSuppliers: boolean;
+  canManageUsers: boolean;
+  canProcessReturns: boolean;
+  canManageSettings: boolean;
+  canViewReports: boolean;
+  canCreditSales: boolean;
+  canDiscount: boolean;
+}
 
 export default function UsersPage() {
   const { settings, userRole } = useStore();
@@ -30,7 +42,31 @@ export default function UsersPage() {
     role: 'cashier' as 'admin' | 'cashier',
   });
 
+  const [permissions, setPermissions] = useState<UserPermissions>({
+    canManageProducts: false,
+    canManageCustomers: false,
+    canManageSuppliers: false,
+    canManageUsers: false,
+    canProcessReturns: false,
+    canManageSettings: false,
+    canViewReports: false,
+    canCreditSales: false,
+    canDiscount: false,
+  });
+
   const { users, addUser, updateUser, deleteUser } = useUsers();
+
+  const permissionOptions: { key: keyof UserPermissions; labelAr: string; labelEn: string; icon: any }[] = [
+    { key: 'canManageProducts', labelAr: 'إدارة المنتجات', labelEn: 'Manage Products', icon: Package },
+    { key: 'canManageCustomers', labelAr: 'إدارة العملاء', labelEn: 'Manage Customers', icon: Users },
+    { key: 'canManageSuppliers', labelAr: 'إدارة الموردين', labelEn: 'Manage Suppliers', icon: Users },
+    { key: 'canManageUsers', labelAr: 'إدارة المستخدمين', labelEn: 'Manage Users', icon: Shield },
+    { key: 'canProcessReturns', labelAr: 'معالجة المرتجعات', labelEn: 'Process Returns', icon: RotateCcw },
+    { key: 'canCreditSales', labelAr: 'المبيعات الآجلة', labelEn: 'Credit Sales', icon: DollarSign },
+    { key: 'canDiscount', labelAr: 'تطبيق الخصومات', labelEn: 'Apply Discounts', icon: ShoppingCart },
+    { key: 'canManageSettings', labelAr: 'إدارة الإعدادات', labelEn: 'Manage Settings', icon: Settings },
+    { key: 'canViewReports', labelAr: 'عرض التقارير', labelEn: 'View Reports', icon: Settings },
+  ];
 
   const handleOpenModal = (user?: any) => {
     if (user) {
@@ -41,6 +77,17 @@ export default function UsersPage() {
         name: user.name,
         role: user.role,
       });
+      setPermissions({
+        canManageProducts: user.permissions?.canManageProducts || false,
+        canManageCustomers: user.permissions?.canManageCustomers || false,
+        canManageSuppliers: user.permissions?.canManageSuppliers || false,
+        canManageUsers: user.permissions?.canManageUsers || false,
+        canProcessReturns: user.permissions?.canProcessReturns || false,
+        canManageSettings: user.permissions?.canManageSettings || false,
+        canViewReports: user.permissions?.canViewReports || false,
+        canCreditSales: user.permissions?.canCreditSales || false,
+        canDiscount: user.permissions?.canDiscount || false,
+      });
     } else {
       setEditingUser(null);
       setFormData({
@@ -49,9 +96,24 @@ export default function UsersPage() {
         name: '',
         role: 'cashier',
       });
+      setPermissions({
+        canManageProducts: false,
+        canManageCustomers: false,
+        canManageSuppliers: false,
+        canManageUsers: false,
+        canProcessReturns: false,
+        canManageSettings: false,
+        canViewReports: false,
+        canCreditSales: false,
+        canDiscount: false,
+      });
     }
     setShowPassword(false);
     setShowModal(true);
+  };
+
+  const togglePermission = (key: keyof UserPermissions) => {
+    setPermissions(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleSave = async () => {
@@ -72,6 +134,7 @@ export default function UsersPage() {
           name: formData.name,
           role: formData.role,
           password: formData.password || undefined,
+          permissions: permissions,
         });
         showToast(lang === 'ar' ? 'تم تحديث المستخدم' : 'User updated', 'success');
       } else {
@@ -80,6 +143,7 @@ export default function UsersPage() {
           password: formData.password,
           name: formData.name,
           role: formData.role,
+          permissions: permissions,
         });
         showToast(lang === 'ar' ? 'تم إضافة المستخدم' : 'User added', 'success');
       }
@@ -230,6 +294,32 @@ export default function UsersPage() {
               >
                 {t('cashier', lang)}
               </Button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              {lang === 'ar' ? 'الصلاحيات' : 'Permissions'}
+            </label>
+            <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+              {permissionOptions.map((perm) => (
+                <label
+                  key={perm.key}
+                  className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    permissions[perm.key]
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={permissions[perm.key]}
+                    onChange={() => togglePermission(perm.key)}
+                    className="w-4 h-4 rounded"
+                  />
+                  <span className="text-sm">{lang === 'ar' ? perm.labelAr : perm.labelEn}</span>
+                </label>
+              ))}
             </div>
           </div>
 

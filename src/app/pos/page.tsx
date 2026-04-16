@@ -39,6 +39,8 @@ export default function POSPage() {
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer'>('cash');
+  const [paymentType, setPaymentType] = useState<'full' | 'credit' | 'partial'>('full');
+  const [paidAmount, setPaidAmount] = useState('');
   const [barcodeInput, setBarcodeInput] = useState('');
   const [quickSaleMode, setQuickSaleMode] = useState(false);
   const [saleComplete, setSaleComplete] = useState(false);
@@ -151,9 +153,26 @@ export default function POSPage() {
 
   const handleCompleteSale = async () => {
     if (cart.length === 0) { showToast(lang === 'ar' ? 'السلة فارغة' : 'Cart is empty', 'warning'); return; }
+    
+    if ((paymentType === 'credit' || paymentType === 'partial') && !selectedCustomer) {
+      showToast(lang === 'ar' ? 'اختر عميل للتصفية الآجلة' : 'Select customer for credit', 'warning');
+      return;
+    }
+    
     try {
       const invoiceNumber = `INV-${Date.now()}`;
       const discountAmount = parseFloat(totalDiscount || '0');
+      
+      let paid = finalTotal;
+      let remaining = 0;
+      
+      if (paymentType === 'credit') {
+        paid = 0;
+        remaining = finalTotal;
+      } else if (paymentType === 'partial') {
+        paid = parseFloat(paidAmount) || 0;
+        remaining = Math.max(0, finalTotal - paid);
+      }
       
       const invoiceItems = cart.map((item, idx) => ({
         productId: item.product.id, productName: lang === 'ar' ? item.product.nameAr : item.product.nameEn,
@@ -164,10 +183,10 @@ export default function POSPage() {
       const { supabase } = await import('@/lib/supabase/client');
       
       await addInvoice({
-        number: invoiceNumber, type: invoiceType, status: 'completed',
+        number: invoiceNumber, type: invoiceType, status: remaining > 0 ? 'pending' : 'completed',
         customerId: selectedCustomer?.id, items: invoiceItems,
         subtotal, vatRate: settings.vatRate, vatAmount: (subtotal - discountAmount) * (settings.vatRate / 100),
-        discount: discountAmount, total: finalTotal, paid: finalTotal, remaining: 0,
+        discount: discountAmount, total: finalTotal, paid: paid, remaining: remaining,
         paymentMethod, createdAt: new Date(), updatedAt: new Date()
       });
 
@@ -183,12 +202,18 @@ export default function POSPage() {
           .eq('id', item.product.id);
       }
 
+      if (remaining > 0 && selectedCustomer) {
+        await supabase.from('customers').update({
+          balance: selectedCustomer.balance + remaining
+        }).eq('id', selectedCustomer.id);
+      }
+
       setLastInvoice(invoiceNumber);
       setSaleComplete(true);
       showToast(invoiceType === 'sale' ? (lang === 'ar' ? 'تم البيع!' : 'Sale completed!') :
                invoiceType === 'purchase' ? (lang === 'ar' ? 'تم الشراء!' : 'Purchase completed!') :
                (lang === 'ar' ? 'تم المرتجع!' : 'Return completed!'), 'success');
-      clearCart(); setShowPaymentModal(false); setTotalDiscount('0');
+      clearCart(); setShowPaymentModal(false); setTotalDiscount('0'); setPaidAmount('');
       refetchProducts();
     } catch (e) { showToast(lang === 'ar' ? 'حدث خطأ' : 'Error', 'error'); }
   };
@@ -448,6 +473,80 @@ export default function POSPage() {
           <div className="p-4 bg-gray-50 dark:bg-slate-700 rounded-lg text-center">
             <p className="text-4xl font-bold text-blue-600">{finalTotal.toFixed(3)} {currency}</p>
           </div>
+          
+          {invoiceType === 'sale' && (
+            <div className="space-y-3">
+              <label className="block text-sm font-medium">{lang === 'ar' ? 'نوع الدفع' : 'Payment Type'}</label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => { setPaymentType('full'); setPaidAmount(''); }}
+                  className={`p-3 rounded-xl border-2 text-center ${
+                    paymentType === 'full' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <Banknote className={`w-6 h-6 mx-auto mb-1 ${paymentType === 'full' ? 'text-green-600' : 'text-gray-400'}`} />
+                  <span className={`text-sm font-medium ${paymentType === 'full' ? 'text-green-600' : ''}`}>
+                    {lang === 'ar' ? 'كاش' : 'Cash'}
+                  </span>
+                </button>
+                <button
+                  onClick={() => { setPaymentType('partial'); setPaidAmount(finalTotal.toFixed(3)); }}
+                  className={`p-3 rounded-xl border-2 text-center ${
+                    paymentType === 'partial' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <CreditCard className={`w-6 h-6 mx-auto mb-1 ${paymentType === 'partial' ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <span className={`text-sm font-medium ${paymentType === 'partial' ? 'text-blue-600' : ''}`}>
+                    {lang === 'ar' ? 'جزئي' : 'Partial'}
+                  </span>
+                </button>
+                <button
+                  onClick={() => { setPaymentType('credit'); setPaidAmount('0'); }}
+                  className={`p-3 rounded-xl border-2 text-center ${
+                    paymentType === 'credit' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  disabled={!selectedCustomer}
+                >
+                  <Clock className={`w-6 h-6 mx-auto mb-1 ${paymentType === 'credit' ? 'text-orange-600' : 'text-gray-400'}`} />
+                  <span className={`text-sm font-medium ${paymentType === 'credit' ? 'text-orange-600' : ''}`}>
+                    {lang === 'ar' ? 'آجل' : 'Credit'}
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {paymentType === 'partial' && (
+            <div className="space-y-3">
+              <Input
+                label={lang === 'ar' ? 'المبلغ المدفوع' : 'Paid Amount'}
+                type="number"
+                step="0.001"
+                value={paidAmount}
+                onChange={(e) => setPaidAmount(e.target.value)}
+                dir="ltr"
+              />
+              <div className="flex gap-2">
+                {[0.25, 0.5, 0.75, 1].map((pct) => (
+                  <Button
+                    key={pct}
+                    variant="secondary"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setPaidAmount((finalTotal * pct).toFixed(3))}
+                  >
+                    {pct * 100}%
+                  </Button>
+                ))}
+              </div>
+              {parseFloat(paidAmount) < finalTotal && (
+                <p className="text-sm text-orange-600">
+                  {lang === 'ar' ? `باقي: ${(finalTotal - (parseFloat(paidAmount) || 0)).toFixed(3)}` : `Remaining: ${(finalTotal - (parseFloat(paidAmount) || 0)).toFixed(3)}`}
+                </p>
+              )}
+            </div>
+          )}
+          
           <div className="grid grid-cols-3 gap-3">
             {[
               { value: 'cash', icon: Banknote, label: t('cash', lang) },
@@ -462,7 +561,7 @@ export default function POSPage() {
             ))}
           </div>
           <div className="flex gap-3">
-            <Button variant="secondary" className="flex-1" onClick={() => setShowPaymentModal(false)}>{t('cancel', lang)}</Button>
+            <Button variant="secondary" className="flex-1" onClick={() => { setShowPaymentModal(false); setPaidAmount(''); setPaymentType('full'); }}>{t('cancel', lang)}</Button>
             <Button className="flex-1 bg-green-600 hover:bg-green-700" size="lg" onClick={handleCompleteSale}>
               <Check className="w-5 h-5 me-2" /> {t('confirm', lang)}
             </Button>
