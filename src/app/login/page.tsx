@@ -7,7 +7,6 @@ import { useStore, useToastStore } from '@/lib/store';
 import { db } from '@/lib/db';
 import { loginUser, isSupabaseConfigured } from '@/lib/supabase/index';
 import { Button } from '@/components/ui/Button';
-import { useLiveQuery } from 'dexie-react-hooks';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,8 +20,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const users = useLiveQuery(() => db.users.toArray(), []);
-
   useEffect(() => {
     if (isAuthenticated) {
       router.push(userRole === 'admin' ? '/' : '/pos');
@@ -33,30 +30,27 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    let user = null;
-    let userRole = 'cashier';
+    try {
+      let user = null;
+      let userRole = 'cashier';
 
-    // Try local first (always works)
-    const localUser = users?.find(u => u.username === username && u.password === password);
-    if (localUser) {
-      user = { username: localUser.username, password: localUser.password };
-      userRole = localUser.role;
-    }
-    
-    // Also try Supabase if configured
-    if (!user && isSupabaseConfigured()) {
-      try {
+      if (isSupabaseConfigured()) {
         const supabaseUser = await loginUser(username, password);
         if (supabaseUser) {
           user = { username: supabaseUser.username, password: supabaseUser.password };
           userRole = supabaseUser.role;
         }
-      } catch (err) {
-        console.log('Supabase login failed, using local data');
       }
-    }
-    
-    setTimeout(() => {
+
+      if (!user) {
+        const dbUsers = await db.users.toArray();
+        const localUser = dbUsers.find(u => u.username === username && u.password === password);
+        if (localUser) {
+          user = { username: localUser.username, password: localUser.password };
+          userRole = localUser.role;
+        }
+      }
+      
       if (user) {
         storeLogin(user.username, user.password);
         showToast(lang === 'ar' ? 'مرحباً بك!' : 'Welcome!', 'success');
@@ -67,8 +61,14 @@ export default function LoginPage() {
           'error'
         );
       }
-      setIsLoading(false);
-    }, 500);
+    } catch (err) {
+      showToast(
+        lang === 'ar' ? 'حدث خطأ أثناء تسجيل الدخول' : 'Login error occurred',
+        'error'
+      );
+    }
+    
+    setIsLoading(false);
   };
 
   return (
