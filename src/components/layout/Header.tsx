@@ -22,6 +22,9 @@ export function Header({ onMenuClick }: HeaderProps) {
   const lang = settings.language;
   const isRTL = lang === 'ar';
 
+  const currentUsername = typeof window !== 'undefined' ? localStorage.getItem('oman-pos-username') || '' : '';
+  
+  const [showUserModal, setShowUserModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showSwitchUserModal, setShowSwitchUserModal] = useState(false);
   const [switchPassword, setSwitchPassword] = useState('');
@@ -131,15 +134,51 @@ export function Header({ onMenuClick }: HeaderProps) {
             <Button 
               variant="ghost" 
               size="sm" 
-              className="p-2 text-red-500 hover:text-red-600"
-              onClick={() => setShowLogoutModal(true)}
-              title={lang === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+              className="p-2"
+              onClick={() => setShowUserModal(true)}
+              title={lang === 'ar' ? 'الحساب' : 'Account'}
             >
-              <LogOut className="w-4 h-4" />
+              <User className="w-4 h-4" />
             </Button>
           </div>
         </div>
       </header>
+
+      {/* User Info Modal */}
+      <Modal 
+        isOpen={showUserModal} 
+        onClose={() => setShowUserModal(false)}
+        title={lang === 'ar' ? 'الحساب' : 'Account'}
+        size="sm"
+      >
+        <div className="space-y-4 text-center">
+          <div className="w-16 h-16 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+            <User className="w-8 h-8 text-blue-600" />
+          </div>
+          <div>
+            <p className="font-semibold text-lg">{currentUsername}</p>
+            <p className="text-sm text-gray-500">{userRole === 'admin' ? (lang === 'ar' ? 'مدير' : 'Admin') : (lang === 'ar' ? 'كاشير' : 'Cashier')}</p>
+          </div>
+          <div className="flex gap-3 pt-4">
+            <Button 
+              variant="secondary" 
+              className="flex-1"
+              onClick={() => { setShowUserModal(false); setShowSwitchUserModal(true); }}
+            >
+              <Lock className="w-4 h-4 me-2" />
+              {lang === 'ar' ? 'تبديل' : 'Switch'}
+            </Button>
+            <Button 
+              variant="primary" 
+              className="flex-1 bg-red-500 hover:bg-red-600"
+              onClick={() => { setShowUserModal(false); setShowLogoutModal(true); }}
+            >
+              <LogOut className="w-4 h-4 me-2" />
+              {lang === 'ar' ? 'خروج' : 'Logout'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Logout Confirmation Modal */}
       <Modal 
