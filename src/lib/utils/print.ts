@@ -69,6 +69,11 @@ export function printThermalReceipt(invoice: Invoice, settings: AppSettings) {
         <span>${lang === 'ar' ? 'التاريخ' : 'Date'}:</span>
         <span>${new Date(invoice.createdAt).toLocaleString('ar-OM')}</span>
       </div>
+      ${invoice.createdBy ? `
+      <div class="row">
+        <span>${lang === 'ar' ? 'بواسطة' : 'By'}:</span>
+        <span>${invoice.createdBy}</span>
+      </div>` : ''}
       
       <div class="line"></div>
       

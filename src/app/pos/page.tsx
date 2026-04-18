@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, 
   Banknote, ArrowRightLeft, User, ScanLine, Check, Clock,
-  Percent, ArrowUpLeft, Package, UserPlus
+  Percent, ArrowUpLeft, Package, UserPlus, ChevronDown, Image
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -245,58 +245,62 @@ export default function POSPage() {
 
   return (
     <MainLayout>
-      <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-120px)] overflow-hidden">
+      <div className="flex flex-col lg:flex-row gap-2 sm:gap-4 h-[calc(100vh-120px)] overflow-hidden">
         {/* Products Section */}
-        <div className="flex-1 flex flex-col gap-3 overflow-hidden">
+        <div className="flex-1 flex flex-col gap-2 sm:gap-3 overflow-hidden">
           <Card className="flex-shrink-0">
-            <CardContent className="p-2 sm:p-3 space-y-2 sm:space-y-3">
+            <CardContent className="p-1.5 sm:p-3 space-y-1.5 sm:space-y-3">
               {/* Type Buttons - Mobile Friendly */}
-              <div className="flex gap-2">
+              <div className="flex gap-1 sm:gap-2">
                 <Button 
                   variant={invoiceType === 'sale' ? 'primary' : 'secondary'} 
                   size="sm" 
-                  className="flex-1 min-h-[44px]"
+                  className="flex-1 min-h-[36px] sm:min-h-[44px] text-xs sm:text-sm"
                   onClick={() => setInvoiceType('sale')}>
-                  <ShoppingCart className="w-4 h-4 me-1" /> 
+                  <ShoppingCart className="w-3 h-3 sm:w-4 h-4 me-1" /> 
                   <span className="hidden sm:inline">{lang === 'ar' ? 'بيع' : 'Sale'}</span>
                   <span className="sm:hidden">{lang === 'ar' ? 'بي' : 'S'}</span>
                 </Button>
                 <Button 
                   variant={invoiceType === 'purchase' ? 'primary' : 'secondary'} 
                   size="sm" 
-                  className="flex-1 min-h-[44px]"
+                  className="flex-1 min-h-[36px] sm:min-h-[44px] text-xs sm:text-sm"
                   onClick={() => setInvoiceType('purchase')}>
-                  <Plus className="w-4 h-4 me-1" />
+                  <Plus className="w-3 h-3 sm:w-4 h-4 me-1" />
                   <span className="hidden sm:inline">{lang === 'ar' ? 'شراء' : 'Purchase'}</span>
                   <span className="sm:hidden">{lang === 'ar' ? 'ش' : 'P'}</span>
                 </Button>
                 <Button 
                   variant={invoiceType === 'return' ? 'primary' : 'secondary'} 
                   size="sm" 
-                  className="flex-1 min-h-[44px]"
+                  className="flex-1 min-h-[36px] sm:min-h-[44px] text-xs sm:text-sm"
                   onClick={() => setInvoiceType('return')}>
-                  <ArrowUpLeft className="w-4 h-4 me-1" />
+                  <ArrowUpLeft className="w-3 h-3 sm:w-4 h-4 me-1" />
                   <span className="hidden sm:inline">{lang === 'ar' ? 'مرتجع' : 'Return'}</span>
                   <span className="sm:hidden">{lang === 'ar' ? 'مر' : 'R'}</span>
                 </Button>
               </div>
               
-              {/* Search Bar */}
-              <div className="flex flex-col sm:flex-row gap-2">
+              {/* Search Bar with dropdown menu */}
+              <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
                 <div className="flex-1 relative">
-                  <Search className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+                  <Search className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 h-5 text-gray-400 ${isRTL ? 'right-2 sm:right-3' : 'left-2 sm:left-3'}`} />
                   <input ref={searchInputRef} type="text" placeholder={lang === 'ar' ? 'البحث أو الباركود...' : 'Search or barcode...'}
                     value={barcodeInput} onChange={(e) => setBarcodeInput(e.target.value)} onKeyDown={handleBarcodeInput}
-                    className={`w-full px-4 py-3 rounded-lg border bg-white dark:bg-slate-800 min-h-[48px] ${isRTL ? 'pe-10 ps-4' : 'ps-10 pe-4'} focus:ring-2 focus:ring-blue-500`} dir="ltr" />
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border bg-white dark:bg-slate-800 min-h-[36px] sm:min-h-[48px] text-sm ${isRTL ? 'pe-9 ps-3 sm:pe-10 sm:ps-4' : 'ps-9 pe-3 sm:ps-10 sm:pe-4'} focus:ring-2 focus:ring-blue-500`} dir="ltr" />
+                  <button 
+                    onClick={() => setShowNewProductModal(true)} 
+                    className={`absolute top-1/2 -translate-y-1/2 p-1 ${isRTL ? 'left-2' : 'right-2'} hover:bg-gray-100 dark:hover:bg-slate-700 rounded`}
+                    title={lang === 'ar' ? 'إضافة منتج جديد' : 'Add new product'}
+                  >
+                    <Plus className="w-3 h-3 sm:w-4 h-4 text-gray-400" />
+                  </button>
                 </div>
-                <Button variant="secondary" className="min-h-[44px] min-w-[44px]" onClick={() => setShowNewProductModal(true)} title={lang === 'ar' ? 'إضافة منتج جديد' : 'Add new product'}>
-                  <Package className="w-5 h-5" />
+                <Button variant={quickSaleMode ? 'primary' : 'secondary'} className="min-h-[36px] sm:min-h-[44px] px-2 sm:px-3" onClick={() => setQuickSaleMode(!quickSaleMode)}>
+                  <ScanLine className="w-3 h-3 sm:w-4 h-4" />
                 </Button>
-                <Button variant={quickSaleMode ? 'primary' : 'secondary'} className="min-h-[44px]" onClick={() => setQuickSaleMode(!quickSaleMode)}>
-                  <ScanLine className="w-5 h-5" />
-                </Button>
-                <Button variant="secondary" className="flex-1 min-h-[44px] justify-start" onClick={() => setShowCustomerModal(true)}>
-                  <User className="w-5 h-5 me-1" /> 
+                <Button variant="secondary" className="flex-1 min-h-[36px] sm:min-h-[44px] justify-start text-xs sm:text-sm" onClick={() => setShowCustomerModal(true)}>
+                  <User className="w-3 h-3 sm:w-4 h-4 me-1" /> 
                   <span className="truncate">{selectedCustomer ? selectedCustomer.name : (lang === 'ar' ? 'عميل' : 'Customer')}</span>
                 </Button>
               </div>
@@ -304,24 +308,24 @@ export default function POSPage() {
           </Card>
 
           {/* Products Grid - Mobile Optimized */}
-          <div className="flex-1 overflow-y-auto pb-4">
-            <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
+          <div className="flex-1 overflow-y-auto pb-2 sm:pb-4">
+            <div className="grid grid-cols-4 xs:grid-cols-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1 sm:gap-2 sm:gap-3">
               {filteredProducts.map((product) => (
                 <button 
                   key={product.id} 
                   onClick={() => handleProductClick(product)} 
                   disabled={product.stock <= 0 && invoiceType !== 'return' && invoiceType !== 'purchase'}
-                  className={`p-2 sm:p-3 rounded-xl bg-white dark:bg-slate-800 border hover:shadow-lg active:scale-95 transition-all text-left min-h-[100px] sm:min-h-[120px] ${
+                  className={`p-1.5 sm:p-3 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border hover:shadow-lg active:scale-95 transition-all text-left min-h-[70px] sm:min-h-[100px] ${
                     product.stock <= 0 ? 'opacity-50' : ''
                   } ${invoiceType === 'return' ? 'ring-2 ring-orange-500' : ''}`}>
-                  <div className={`aspect-square rounded-lg mb-2 flex items-center justify-center text-xs font-bold ${
+                  <div className={`aspect-square rounded mb-1 sm:mb-2 flex items-center justify-center text-[10px] sm:text-xs font-bold ${
                     invoiceType === 'return' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30' : 'bg-gray-100 dark:bg-slate-700'
                   }`}>
                     {product.barcode.slice(-4)}
                   </div>
-                  <p className="font-medium text-xs sm:text-sm line-clamp-2 leading-tight">{lang === 'ar' ? product.nameAr : product.nameEn}</p>
-                  <p className="text-blue-600 font-bold text-sm sm:text-base mt-1">{product.price.toFixed(3)}</p>
-                  <p className={`text-xs mt-1 ${product.stock <= 0 ? 'text-red-500' : 'text-gray-500'}`}>
+                  <p className="font-medium text-[10px] sm:text-sm line-clamp-1 sm:line-clamp-2 leading-tight">{lang === 'ar' ? product.nameAr : product.nameEn}</p>
+                  <p className="text-blue-600 font-bold text-xs sm:text-base mt-0.5 sm:mt-1">{product.price.toFixed(3)}</p>
+                  <p className={`text-[10px] sm:text-xs mt-0.5 ${product.stock <= 0 ? 'text-red-500' : 'text-gray-500'}`}>
                     {product.stock <= 0 ? (lang === 'ar' ? 'نفذ' : 'Out') : product.stock}
                   </p>
                 </button>
@@ -331,11 +335,11 @@ export default function POSPage() {
         </div>
 
         {/* Cart Section - Mobile Optimized */}
-        <div className="w-full lg:w-96 flex-shrink-0">
-          <Card className="h-full flex flex-col max-h-[50vh] lg:max-h-none">
-            <div className="p-3 sm:p-4 border-b dark:border-slate-700 flex justify-between items-center">
-              <h3 className="font-semibold flex items-center gap-2">
-                <ShoppingCart className="w-5 h-5" /> {cart.length} {lang === 'ar' ? 'منتج' : 'items'}
+        <div className="w-full lg:w-80 xl:w-96 flex-shrink-0">
+          <Card className="h-full flex flex-col max-h-[40vh] sm:max-h-[50vh] lg:max-h-none">
+            <div className="p-2 sm:p-4 border-b dark:border-slate-700 flex justify-between items-center">
+              <h3 className="font-semibold flex items-center gap-1 sm:gap-2 text-sm sm:text-base">
+                <ShoppingCart className="w-4 h-4 sm:w-5 h-5" /> {cart.length} {lang === 'ar' ? 'منتج' : 'items'}
               </h3>
               {cart.length > 0 && (
                 <div className="flex gap-2">

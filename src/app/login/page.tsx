@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, User, Eye, EyeOff, ShoppingBag } from 'lucide-react';
+import { Lock, User, Eye, EyeOff, ShoppingBag, Image } from 'lucide-react';
 import { useStore, useToastStore } from '@/lib/store';
 import { db } from '@/lib/db';
 import { loginUser, isSupabaseConfigured } from '@/lib/supabase/index';
@@ -76,9 +76,13 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 p-4">
       <div className={`w-full max-w-md ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
-            <ShoppingBag className="w-8 h-8 text-white" />
-          </div>
+          {settings.shopLogo ? (
+            <img src={settings.shopLogo} alt="Logo" className="w-20 h-20 mx-auto mb-4 rounded-xl object-contain" />
+          ) : (
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
+              <ShoppingBag className="w-8 h-8 text-white" />
+            </div>
+          )}
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {settings.shopName}
           </h1>
