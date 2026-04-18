@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { t, TranslationKey } from '@/lib/i18n';
-import { useState, forwardRef } from 'react';
+import { useState } from 'react';
 
 const navItems: Array<{
   href: string;
@@ -46,27 +46,18 @@ export function Sidebar({ mobileOpen, onMobileClose }: { mobileOpen?: boolean; o
   const lang = settings.language;
   const isRTL = lang === 'ar';
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileOpen, setIsMobileOpen] = useState(mobileOpen || false);
   const isAdmin = userRole === 'admin';
 
   const handleMobileClose = () => {
-    setIsMobileOpen(false);
     onMobileClose?.();
   };
 
   return (
     <>
-      {isMobileOpen && (
+      {mobileOpen && (
         <div 
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
           onClick={handleMobileClose}
-        />
-      )}
-
-      {isMobileOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
-          onClick={() => setIsMobileOpen(false)}
         />
       )}
 
@@ -78,14 +69,14 @@ export function Sidebar({ mobileOpen, onMobileClose }: { mobileOpen?: boolean; o
         transform transition-transform duration-200
         lg:translate-x-0
         ${isRTL 
-          ? `${isMobileOpen ? 'translate-x-0' : 'translate-x-full'} lg:translate-x-0` 
-          : `${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`
+          ? `${mobileOpen ? 'translate-x-0' : 'translate-x-full'} lg:translate-x-0` 
+          : `${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`
         }
         ${isCollapsed ? 'lg:w-20' : ''}
       `}>
         <div className="flex items-center justify-between lg:hidden p-4">
           <span className="font-semibold text-gray-900 dark:text-white">{t('settings', lang)}</span>
-          <button onClick={() => setIsMobileOpen(false)}>
+          <button onClick={() => onMobileClose?.()}>
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -115,7 +106,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: { mobileOpen?: boolean; o
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setIsMobileOpen(false)}
+                onClick={() => onMobileClose?.()}
                 className={`
                   flex items-center gap-3 px-3 py-2.5 rounded-lg
                   transition-all duration-150
